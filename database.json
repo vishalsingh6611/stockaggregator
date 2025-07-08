@@ -1,0 +1,9 @@
+    {
+      "dev": {
+        "driver": "pg",
+        "user": "vishalsingh",
+        "password": "localhost",
+        "host": "localhost",
+        "database": "order"
+      }
+    }
