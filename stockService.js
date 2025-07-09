@@ -21,7 +21,6 @@ async function fetchStockFromVendor(vendorName, apiUrl) {
 }
 
 async function updateLocalStock(vendorName, vendorStock) {
-  await db.transact(async (client) => {
     for (const item of vendorStock) {
       const { productId, quantity } = item;
       const upsertQuery = `
@@ -33,7 +32,6 @@ async function updateLocalStock(vendorName, vendorStock) {
       await client.query(upsertQuery, [productId, vendorName, quantity]);
     }
     console.log(`Local stock updated for ${vendorName}.`);
-  });
 }
 
 async function syncAllVendorStocks() {
