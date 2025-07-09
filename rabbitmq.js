@@ -56,7 +56,6 @@ async function consumeOrders() {
     } catch (error) {
       console.error(`Error processing order ${order ? order.orderId : 'unknown'}:`, error.message);
 
-      // Retry logic
       if (order && order.retries < MAX_RETRIES) {
         order.retries++;
         console.warn(`Retrying order ${order.orderId}. Attempt ${order.retries}/${MAX_RETRIES}`);
