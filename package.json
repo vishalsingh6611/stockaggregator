@@ -5,8 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "start:vendorA": "node vendorA_mock_api.js",
-    "setup:db": "psql -U postgres -d order_platform -f setup.sql"
+    "start:vendorA": "node vendorA_mock_api.js"
   },
   "keywords": [],
   "author": "",

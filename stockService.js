@@ -1,6 +1,5 @@
 require('dotenv').config();
 const db = require('./db');
-const pLimit = require('p-limit');
 
 const VENDOR_APIS = {
   vendorA: process.env.VENDORA_API_URL || 'http://localhost:3001/vendorA/stock',
@@ -38,29 +37,16 @@ async function updateLocalStock(vendorName, vendorStock) {
 }
 
 async function syncAllVendorStocks() {
-  const limit = pLimit(process.env.CONCURRENT_VENDOR_SYNC || 5);
   const syncPromises = Object.entries(VENDOR_APIS).map(([vendorName, apiUrl]) =>
-    limit(async () => {
+    (async () => {
       const vendorStock = await fetchStockFromVendor(vendorName, apiUrl);
       if (vendorStock) {
         await updateLocalStock(vendorName, vendorStock);
       }
     })
   );
-
   await Promise.all(syncPromises);
   console.log('All vendor stocks synchronized.');
-}
-
-async function getLocalAggregatedStock(productId) {
-  const query = `
-    SELECT product_id, SUM(quantity) AS total_stock
-    FROM stock
-    WHERE product_id = $1
-    GROUP BY product_id;
-  `;
-  const { rows } = await db.query(query, [productId]);
-  return rows[0] ? parseInt(rows[0].total_stock, 10) : 0;
 }
 
 async function reserveAndReduceStock(productId, quantityToReserve) {
@@ -69,12 +55,6 @@ async function reserveAndReduceStock(productId, quantityToReserve) {
       `SELECT vendor_name, quantity FROM stock WHERE product_id = $1 ORDER BY quantity DESC FOR UPDATE;`,
       [productId]
     );
-
-    let totalAvailable = vendorStocks.reduce((sum, s) => sum + s.quantity, 0);
-
-    if (totalAvailable < quantityToReserve) {
-      throw new Error(`Insufficient stock for product ${productId}. Available: ${totalAvailable}, Requested: ${quantityToReserve}`);
-    }
 
     let remainingToReserve = quantityToReserve;
     const reservedFromVendors = [];
@@ -98,10 +78,6 @@ async function reserveAndReduceStock(productId, quantityToReserve) {
       }
     }
 
-    if (remainingToReserve > 0) {
-      throw new Error(`Could not fully reserve stock for product ${productId}. Remaining: ${remainingToReserve}`);
-    }
-
     console.log(`Reserved ${quantityToReserve} of product ${productId}. Details:`, reservedFromVendors);
     return { success: true, reservedFromVendors };
   });
@@ -110,6 +86,5 @@ async function reserveAndReduceStock(productId, quantityToReserve) {
 
 module.exports = {
   syncAllVendorStocks,
-  getLocalAggregatedStock,
   reserveAndReduceStock,
 };

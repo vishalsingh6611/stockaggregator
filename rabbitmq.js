@@ -1,6 +1,5 @@
 require('dotenv').config();
 const amqp = require('amqplib');
-const orderService = require('./orderService');
 
 let channel;
 let connection;
@@ -47,9 +46,9 @@ async function consumeOrders() {
 
     let order;
     try {
+      const orderService = require('./orderService');
       order = JSON.parse(msg.content.toString());
       console.log(`Processing order from queue: ${order.orderId}, Retries: ${order.retries}`);
-
       await orderService.processQueuedOrder(order);
       channel.ack(msg);
       console.log(`Order ${order.orderId} processed and acknowledged.`);
